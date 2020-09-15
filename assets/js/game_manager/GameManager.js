@@ -50,8 +50,24 @@ class GameManager {
         // update the spawner
         if (this.chests[chestId]) {
           this.spawners[this.chests[chestId].spawnerId].removeObject(chestId);
-      }
-    });
+        }
+      });
+
+      this.scene.events.on('monsterAttacked', (monsterId) => {
+        // update the spawner
+        if (this.monsters[monsterId]) {
+          // subtract health from monster model
+          this.monsters[monsterId].loseHealth();
+
+          // check the monsters health and if dead then remove object
+          if (this.monsters[monsterId].health <= 0) {
+            this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId); 
+            this.scene.events.emit('monsterRemoved', monsterId);           
+          } else {
+            this.scene.events.emit('updateMonsterHealth', monsterId, this.monsters[monsterId].health);     
+          }
+        }
+      });
     }    
 
     setupSpawners() {
@@ -110,7 +126,6 @@ class GameManager {
     addMonster(monsterId, monster){
       this.monsters[monsterId] = monster;
       this.scene.events.emit('monsterSpawned', monster);
-      console.log(monster);
     }
 
     deleteMonster(monsterId) {

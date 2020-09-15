@@ -22,7 +22,6 @@ class Spawner {
     }
 
     spawnObject() {
-        console.log ('spawning object');
         if (this.objectType === SpawnerType.CHEST) {
             this.spawnChest();
         } else if (this.objectType === SpawnerType.MONSTER) {

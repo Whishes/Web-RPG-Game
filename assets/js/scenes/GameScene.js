@@ -25,7 +25,7 @@ class GameScene extends Phaser.Scene {
   }
 
   createPlayer(location) {
-    this.player = new Player(this, location[0] * 2, location[1] * 2, 'characters', 0);
+    this.player = new PlayerContainer(this, location[0] * 2, location[1] * 2, 'characters', 0);
   }
 
   createGroups() {
@@ -84,6 +84,17 @@ class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.map.blockedLayer);
     // check for overlaps between player and chest game objects
     this.physics.add.overlap(this.player, this.chests, this.collectChest, null, this);
+    // check for collisions between monster and the tiled blocked layer
+    this.physics.add.collider(this.monsters, this.map.blockedLayer);
+    // check for overlaps between player's weapon and monster game objects
+    this.physics.add.overlap(this.player.weapon, this.monsters, this.enemyOverlap, null, this);
+  }
+
+  enemyOverlap(player, enemy) {
+    if (this.player.playerAttacking && !this.player.swordHit) {
+      this.player.swordHit = true;
+      this.events.emit('monsterAttacked', enemy.id);
+    }
   }
 
   collectChest(player, chest) {
@@ -116,6 +127,22 @@ class GameScene extends Phaser.Scene {
     this.events.on('monsterSpawned', (monster) => {
       this.spawnMonster(monster);
     });    
+
+    this.events.on('monsterRemoved', (monsterId) => {
+      this.monsters.getChildren().forEach((monster) => {
+        if (monster.id === monsterId) {
+          monster.makeInactive();
+        }
+      });
+    }); 
+
+    this.events.on('updateMonsterHealth', (monsterId, health) => {
+      this.monsters.getChildren().forEach((monster) => {
+        if (monster.id === monsterId) {
+          monster.updateHealth(health);
+        }
+      });
+    }); 
 
     this.gameManager = new GameManager(this, this.map.map.objects);
     this.gameManager.setup();
