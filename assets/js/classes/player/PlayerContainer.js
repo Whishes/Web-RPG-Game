@@ -6,7 +6,7 @@ const Direction = {
 };
 
 class PlayerContainer extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, key, frame) {
+    constructor(scene, x, y, key, frame, health, maxHealth, id) {
       super(scene, x, y);
       this.scene = scene; // the scene this container will be added to
       this.velocity = 160; // the velocity when moving our player
@@ -14,6 +14,9 @@ class PlayerContainer extends Phaser.GameObjects.Container {
       this.playerAttacking = false;
       this.flipX = true;
       this.swordHit = false;
+      this.health = health;
+      this.maxHealth = maxHealth;
+      this.id = id;
   
       // set the container size
       this.setSize(64, 64);
@@ -37,8 +40,32 @@ class PlayerContainer extends Phaser.GameObjects.Container {
       this.scene.physics.world.enable(this.weapon);
       this.add(this.weapon);
       this.weapon.alpha = 0;
+
+      // Create the Player Healthbar
+      this.createHealthbar();
     }
   
+    createHealthbar() {
+      this.healthbar = this.scene.add.graphics();
+      this.healthbar.fillStyle(0xffffff, 1);
+      this.healthbar.fillRect(this.x - 32, this.y - 40, 64, 5);
+      this.healthbar.fillGradientStyle(0xff0000, 0xffffff, 4);
+      this.healthbar.fillRect(this.x = 32, this.y - 40, 64 * (this.health / this.maxHealth), 5);
+  }
+
+  updateHealthBar() {
+      this.healthbar.clear();
+      this.healthbar.fillStyle(0xffffff, 1);
+      this.healthbar.fillRect(this.x - 32, this.y - 40, 64, 5);
+      this.healthbar.fillGradientStyle(0xff0000, 0xffffff, 4);
+      this.healthbar.fillRect(this.x - 32, this.y - 40, 64 * (this.health / this.maxHealth), 5);
+  }
+
+  updateHealth(health) {
+      this.health = health;
+      this.updateHealthBar();
+  }
+
     update(cursors) {
       this.body.setVelocity(0);
   
@@ -94,6 +121,8 @@ class PlayerContainer extends Phaser.GameObjects.Container {
             this.weapon.flipX = true;
         }
       }
+
+      this.updateHealthBar();
     }
   }
   

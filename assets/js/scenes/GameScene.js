@@ -5,7 +5,6 @@ class GameScene extends Phaser.Scene {
 
   init() {
     this.scene.launch('Ui');
-    this.score = 0;
   }
 
   create() {
@@ -24,8 +23,16 @@ class GameScene extends Phaser.Scene {
     this.goldPickupAudio = this.sound.add('goldSound', { loop: false, volume: 0.2 });
   }
 
-  createPlayer(location) {
-    this.player = new PlayerContainer(this, location[0] * 2, location[1] * 2, 'characters', 0);
+  createPlayer(playerObject) {
+    this.player = new PlayerContainer(this, 
+      playerObject.x * 2, 
+      playerObject.y * 2, 
+      'characters', 
+      0,
+      playerObject.health,
+      playerObject.maxHealth,
+      playerObject.id,
+      );
   }
 
   createGroups() {
@@ -90,23 +97,18 @@ class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player.weapon, this.monsters, this.enemyOverlap, null, this);
   }
 
-  enemyOverlap(player, enemy) {
+  enemyOverlap(weapon, enemy) {
     if (this.player.playerAttacking && !this.player.swordHit) {
       this.player.swordHit = true;
-      this.events.emit('monsterAttacked', enemy.id);
+      this.events.emit('monsterAttacked', enemy.id, this.player.id);
     }
   }
 
   collectChest(player, chest) {
     // play gold pickup sound
     this.goldPickupAudio.play();
-    // update our score
-    this.score += chest.coins;
-    // update score in the ui
-    this.events.emit('updateScore', this.score);
-    // make chest game object inactive
-    chest.makeInactive();
-    this.events.emit('pickUpChest', chest.id);
+
+    this.events.emit('pickUpChest', chest.id, player.id);
   }
 
   createMap() {
@@ -115,8 +117,8 @@ class GameScene extends Phaser.Scene {
   }
 
   createGameManager() {
-    this.events.on('spawnPlayer', (location) => {
-      this.createPlayer(location);
+    this.events.on('spawnPlayer', (playerObject) => {
+      this.createPlayer(playerObject);
       this.addCollisions();
     });
 
@@ -127,6 +129,14 @@ class GameScene extends Phaser.Scene {
     this.events.on('monsterSpawned', (monster) => {
       this.spawnMonster(monster);
     });    
+
+    this.events.on('chestRemoved', (chestId) => {
+      this.chests.getChildren().forEach((chest) => {
+        if (chest.id === chestId) {
+          chest.makeInactive();
+        }
+      });
+    });
 
     this.events.on('monsterRemoved', (monsterId) => {
       this.monsters.getChildren().forEach((monster) => {
@@ -142,6 +152,10 @@ class GameScene extends Phaser.Scene {
           monster.updateHealth(health);
         }
       });
+    }); 
+
+    this.events.on('updatePlayerHealth', (playerId, health) => {
+      this.player.updateHealth(health);
     }); 
 
     this.gameManager = new GameManager(this, this.map.map.objects);
