@@ -6,7 +6,7 @@ const Direction = {
 };
 
 class PlayerContainer extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, key, frame, health, maxHealth, id) {
+    constructor(scene, x, y, key, frame, health, maxHealth, id, attackAudio) {
       super(scene, x, y);
       this.scene = scene; // the scene this container will be added to
       this.velocity = 160; // the velocity when moving our player
@@ -17,6 +17,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
       this.health = health;
       this.maxHealth = maxHealth;
       this.id = id;
+      this.attackAudio = attackAudio;
   
       // set the container size
       this.setSize(64, 64);
@@ -47,10 +48,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
   
     createHealthbar() {
       this.healthbar = this.scene.add.graphics();
-      this.healthbar.fillStyle(0xffffff, 1);
-      this.healthbar.fillRect(this.x - 32, this.y - 40, 64, 5);
-      this.healthbar.fillGradientStyle(0xff0000, 0xffffff, 4);
-      this.healthbar.fillRect(this.x = 32, this.y - 40, 64 * (this.health / this.maxHealth), 5);
+      this.updateHealthBar();
   }
 
   updateHealthBar() {
@@ -64,6 +62,12 @@ class PlayerContainer extends Phaser.GameObjects.Container {
   updateHealth(health) {
       this.health = health;
       this.updateHealthBar();
+  }
+
+  respawn(playerObject) {
+    this.health = playerObject.health;
+    this.setPosition(playerObject.x, playerObject.y);
+    this.updateHealthBar();
   }
 
     update(cursors) {
@@ -94,6 +98,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
       if (Phaser.Input.Keyboard.JustDown(cursors.space) && !this.playerAttacking) {
           this.weapon.alpha = 1;
           this.playerAttacking = true;
+          this.attackAudio.play();
           this.scene.time.delayedCall(150, () => {
               this.weapon.alpha = 0;
               this.playerAttacking = false;

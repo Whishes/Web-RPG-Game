@@ -79,7 +79,11 @@ class GameManager {
 
             // Removing the monster
             this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId); 
-            this.scene.events.emit('monsterRemoved', monsterId);           
+            this.scene.events.emit('monsterRemoved', monsterId); 
+            
+            // Add health to player when monster dies
+            this.players[playerId].updateHealth(2);
+            this.scene.events.emit('updatePlayerHealth', playerId, this.players[playerId].health);  
           } else {
             // Update the players health
             this.players[playerId].updateHealth(-attack);
@@ -87,6 +91,17 @@ class GameManager {
 
             // Update the Monster's health
             this.scene.events.emit('updateMonsterHealth', monsterId, this.monsters[monsterId].health);     
+
+            // Check the player's health for player death
+            if (this.players[playerId].health <= 0) {
+              // Update the gold that the player has
+              this.players[playerId].updateGold(parseInt(-this.players[playerId].gold / 2), 10);
+              this.scene.events.emit('updateScore', this.players[playerId].gold); 
+
+              // Respawn the player
+              this.players[playerId].respawn();
+              this.scene.events.emit('respawnPlayer', this.players[playerId]);
+            }
           }
         }
       });
@@ -125,6 +140,7 @@ class GameManager {
           this.monsterLocations[key], 
           this.addMonster.bind(this), 
           this.deleteMonster.bind(this),
+          this.moveMonsters.bind(this),
         );
 
       this.spawners[spawner.id] = spawner;
@@ -153,5 +169,9 @@ class GameManager {
 
     deleteMonster(monsterId) {
       delete this.monsters[monsterId];
+    }
+
+    moveMonsters(){
+      this.scene.events.emit('monsterMovement', this.monsters);
     }
 }
